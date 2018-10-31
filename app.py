@@ -195,13 +195,24 @@ def scan_register():
     s1.settimeout(5.0) # 5 seconds
     m=s1.recvfrom(1024)
     wifi_devices_string = m[0]
+    mylist = wifi_devices_string.split(',')
+
+    current_device = {}
+    current_device['mac_address'] = mylist[1]
+    current_device['name'] = 'AC_SWITCH'
+    current_device['type'] = 'room_sensor'
+    current_device['ip_address'] = mylist[2]
+
+    json_data = json.dumps(current_device)
+    devices.append(current_device)
+    devices.append(ble_devices)
 
     s.close()
     s1.close()
     # for dev in devices:
         # Register devices
         # symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
-    return wifi_devices_string
+    return devices
 
 def control_switch(status):
     s = socket(AF_INET, SOCK_STREAM)
