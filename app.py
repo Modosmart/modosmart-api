@@ -209,7 +209,7 @@ def control_switch(status):
     s.close()
     return data
 
-def listen_socket:
+def listen_socket():
     for i in range(5):
         time.sleep(1)
         s=socket(AF_INET, SOCK_DGRAM)
