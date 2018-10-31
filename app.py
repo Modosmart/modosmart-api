@@ -6,7 +6,7 @@ import symbiote_manage
 import re
 import requests
 import json
-import socket
+from socket import *
 import threading
 import time
 
@@ -190,8 +190,8 @@ def scan_register():
     ble_devices = ble_manage.scan_room_sensor()
     t = threading.Thread(target=listen_socket, name='listen_socket')
     t.start()
-    s=socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    s=socket(AF_INET, SOCK_DGRAM)
+    s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     s.sendto('DISCOVER\r',('255.255.255.255',3310))
     # for dev in devices:
         # Register devices
@@ -199,7 +199,7 @@ def scan_register():
     return wifi_devices
 
 def control_switch(status):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket(AF_INET, SOCK_STREAM)
     s.connect((AC_SWITCH_IP_ADDRESS, AC_SWITCH_PORT))
     if (status == 0):
         s.send('SET,1:ONOFF,OFF\r')
@@ -212,7 +212,7 @@ def control_switch(status):
 def listen_socket():
     for i in range(5):
         time.sleep(1)
-        s=socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s=socket(AF_INET, SOCK_DGRAM)
         s.bind(('',3310))
         m=s.recvfrom(1024)
         wifi_devices.append(m[0])
