@@ -204,6 +204,8 @@ def scan_register():
     current_device['ip_address'] = mylist[2]
 
     json_data = json.dumps(current_device)
+
+    devices = []
     devices.append(current_device)
     devices.append(ble_devices)
 
