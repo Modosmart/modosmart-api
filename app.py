@@ -7,13 +7,10 @@ import re
 import requests
 import json
 from socket import *
-import time
+# import time
 
 PUBLIC_RESOURCES = 'https://symbioteweb.eu.ngrok.io/innkeeper/public_resources'
-AC_SWITCH_IP_ADDRESS = '192.168.1.102'
 AC_SWITCH_PORT = 3310
-AC_SWITCH_MAC_ADDRESS = '40:4c:f5:c0:de:7e'
-AC_SWITCH_NAME = 'AcSwitch'
 BUFFER_SIZE = 1024
 
 app = Flask(__name__)
@@ -24,7 +21,8 @@ app = Flask(__name__)
 #     print 'Catch all'
 #     print 'You want path: %s' % path
 #     print request.get_data()
-#     return 'You want path: %s' % path
+#     return jsonify('el3ab yala')
+
 
 @app.route('/')
 def index():
@@ -36,10 +34,13 @@ def scan_devices():
     devices = scan_register()
     return jsonify(devices)
 
+
 @app.route('/api/register_switch', methods=['POST'])
 def register_switch():
-    response = symbiote_manage.register_ac_switch(AC_SWITCH_MAC_ADDRESS, AC_SWITCH_NAME)
-    return jsonify(response)
+    response = symbiote_manage.register_ac_switch(
+        '00:1D:C9:A1:89:00', '192.168.1.23', "AC_SWITCH")
+    return jsonify('OK')
+
 
 @app.route('/api/unregister/room_sensor/<ssp_id>', methods=['POST'])
 def unregister_room_sensor(ssp_id):
@@ -76,6 +77,24 @@ def read_resource(sensor_id):
 
     return jsonify(final_response)
 
+@app.route('/rap/ac_switch', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def ac_resource_rap():
+    print 'Control AC Switch'
+    # GET IP Address
+    request_data = json.loads(request.get_data())
+    resourceInfo = request_data['resourceInfo']
+    ip_address = resourceInfo[0]['internalIdResource']
+    body = request_data['body']
+    OnOffCapabililty = body['OnOffCapabililty']
+    control = OnOffCapabililty['control']
+    if (control):
+        status = control['on']
+        if status:
+            control_switch(1, ip_address)
+        else:
+            control_switch(0, ip_address)
+    current_status = get_control_switch(ip_address)
+    return jsonify(current_status)
 
 @app.route('/rap/room_sensor', methods=['POST'])
 def read_resource_rap():
@@ -183,54 +202,76 @@ def read_resource_rap():
     #     }').decode("utf8")
     return jsonify(final_readings)
 
+
 def scan_register():
     ble_devices = ble_manage.scan_room_sensor()
-    s=socket(AF_INET, SOCK_DGRAM)
+    s = socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-    s.sendto('DISCOVER\r',('255.255.255.255',3310))
-    #time.sleep(5)
+    s.sendto('DISCOVER\r', ('255.255.255.255', 3310))
+    # time.sleep(5)
 
-    s1=socket(AF_INET, SOCK_DGRAM)
-    s1.bind(('',3310))
-    s1.settimeout(5.0) # 5 seconds
-    m=s1.recvfrom(1024)
+    s1 = socket(AF_INET, SOCK_DGRAM)
+    s1.bind(('', 3310))
+    s1.settimeout(5.0)  # 5 seconds
+    m = s1.recvfrom(1024)
     wifi_devices_string = m[0]
     mylist = wifi_devices_string.split(',')
 
+    ac_switch_mac_address = mylist[1]
+    final_ac_switch_mac_address = ac_switch_mac_address[:2] + ':' + ac_switch_mac_address[2:4] + ':' + ac_switch_mac_address[4:6] + \
+        ':' + ac_switch_mac_address[6:8] + ':' + \
+        ac_switch_mac_address[8:10] + ':' + ac_switch_mac_address[10:12]
+
     current_device = {}
-    current_device['mac_address'] = mylist[1]
+    current_device['mac_address'] = final_ac_switch_mac_address
     current_device['name'] = 'AC_SWITCH'
-    current_device['type'] = 'room_sensor'
+    current_device['type'] = 'ac_switch'
     current_device['ip_address'] = mylist[2]
 
     json_data = json.dumps(current_device)
-
     devices = []
     devices.append(current_device)
     devices.append(ble_devices)
 
     s.close()
     s1.close()
-    # for dev in devices:
-        # Register devices
-        # symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
+    for dev in devices:
+    # Register devices
+        if (dev['type'] == 'room_sensor'):
+            symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
+        else:
+            symbiote_manage.register_ac_switch(dev['mac_address'], dev['ip_address'], dev['name'])
     return devices
 
-def control_switch(status):
+
+def control_switch(status, ip_address):
     s = socket(AF_INET, SOCK_STREAM)
-    s.connect((AC_SWITCH_IP_ADDRESS, AC_SWITCH_PORT))
+    s.connect((ip_address, AC_SWITCH_PORT))
     if (status == 0):
         s.send('SET,1:ONOFF,OFF\r')
     else:
         s.send('SET,1:ONOFF,ON\r')
-    s.settimeout(5.0) # 5 seconds
+    s.settimeout(5.0)  # 5 seconds
     data = s.recv(BUFFER_SIZE)
     s.settimeout(None)
     s.close()
     return data
 
+def get_control_switch(ip_address):
+    s = socket(AF_INET, SOCK_STREAM)
+    s.connect((ip_address, AC_SWITCH_PORT))
+    s.send('GET,1:ONOFF\r')
+    s.settimeout(5.0)  # 5 seconds
+    data = s.recv(BUFFER_SIZE)
+    s.settimeout(None)
+    s.close()
+    state = 'OFF'
+    if data[13] == "F":
+        state = 'OFF'
+    else:
+        state = 'ON'
+    return state
 
 if __name__ == '__main__':
-    # control_switch(1)
-    # scan_register()
+    scan_register()
     app.run(debug=True, host='0.0.0.0', port=3030)
