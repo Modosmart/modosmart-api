@@ -212,7 +212,7 @@ def control_switch(status):
 def listen_socket():
     for i in range(5):
         time.sleep(1)
-        s=socket(AF_INET, SOCK_DGRAM)
+        s=socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.bind(('',3310))
         m=s.recvfrom(1024)
         wifi_devices.append(m[0])
