@@ -7,7 +7,6 @@ import re
 import requests
 import json
 from socket import *
-import threading
 import time
 
 PUBLIC_RESOURCES = 'https://symbioteweb.eu.ngrok.io/innkeeper/public_resources'
@@ -16,8 +15,6 @@ AC_SWITCH_PORT = 3310
 AC_SWITCH_MAC_ADDRESS = '40:4c:f5:c0:de:7e'
 AC_SWITCH_NAME = 'AcSwitch'
 BUFFER_SIZE = 1024
-
-wifi_devices = []
 
 app = Flask(__name__)
 
@@ -188,18 +185,23 @@ def read_resource_rap():
 
 def scan_register():
     ble_devices = ble_manage.scan_room_sensor()
-    t = threading.Thread(target=listen_socket, name='listen_socket')
-    t.start()
     s=socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     s.sendto('DISCOVER\r',('255.255.255.255',3310))
-    time.sleep(5)
-    print 'timeout check recived messages'
+    #time.sleep(5)
+
+    s1=socket(AF_INET, SOCK_DGRAM)
+    s1.bind(('',3310))
+    s1.settimeout(5.0) # 5 seconds
+    m=s1.recvfrom(1024)
+    wifi_devices_string = m[0]
+
+    s.close()
+    s1.close()
     # for dev in devices:
         # Register devices
         # symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
-    print wifi_devices
-    return wifi_devices
+    return wifi_devices_string
 
 def control_switch(status):
     s = socket(AF_INET, SOCK_STREAM)
@@ -208,18 +210,11 @@ def control_switch(status):
         s.send('SET,1:ONOFF,OFF\r')
     else:
         s.send('SET,1:ONOFF,ON\r')
+    s.settimeout(5.0) # 5 seconds
     data = s.recv(BUFFER_SIZE)
+    s.settimeout(None)
     s.close()
     return data
-
-def listen_socket():
-    for i in range(5):
-        time.sleep(1)
-        s=socket(AF_INET, SOCK_DGRAM)
-        s.bind(('',3310))
-        m=s.recvfrom(1024)
-        print m[0]
-        wifi_devices.append(m[0])
 
 
 if __name__ == '__main__':
