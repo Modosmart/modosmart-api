@@ -190,7 +190,6 @@ def register_room_sensor(mac_address, name):
 			]\
 		  }\
 		}')
-
     register_resource(resource_1)
 
     kalive = create_keepalive_message(ssp_id)
@@ -226,48 +225,79 @@ def register_ac_switch(mac_address, name):
 
     device_name = name + '_' + mac_address
 
-    resource_1 = str('{\
-        "internalIdResource": "' + mac_address + '",\
-        "sspIdResource": "",\
-        "sspIdParent": "' + ssp_id + '",\
-        "symIdParent": "' + sym_id + '",\
-        "accessPolicy": {\
-            "policyType": "PUBLIC",\
-            "requiredClaims": {}\
-        },\
-        "filteringPolicy": {\
-            "policyType": "PUBLIC",\
-            "requiredClaims": {}\
-        },\
-        "resource": {\
-            "@c": ".Actuator",\
-            "id": "",\
-            "name": "' + device_name + '",\
-            "description": null,\
-            "interworkingServiceURL": "http://localhost:3030/rap/ac_switch",\
-            "locatedAt": null,\
-            "services": null,\
-            "capabilities": [{\
-                "name": "OnOffCapabililty",\
-                "parameters": [{\
-                    "name": "switch",\
-                    "datatype": {\
-                        "@c": ".PrimitiveDatatype",\
-                        "baseDatatype": "xsd:unsignedByte",\
-                        "isArray": false\
-                    },\
-                    "mandatory": true,\
-                    "restrictions": [{\
-                        "@c": ".RangeRestriction",\
-                        "min": 0,\
-                        "max": 1\
-                    }]\
-                }],\
-                "effects": null\
-            }]\
-        }\
-    }')
+    # resource_1 = str('{\
+    #     "internalIdResource": "' + mac_address + '",\
+    #     "sspIdResource": "",\
+    #     "sspIdParent": "' + ssp_id + '",\
+    #     "symIdParent": "' + sym_id + '",\
+    #     "accessPolicy": {\
+    #         "policyType": "PUBLIC",\
+    #         "requiredClaims": {}\
+    #     },\
+    #     "filteringPolicy": {\
+    #         "policyType": "PUBLIC",\
+    #         "requiredClaims": {}\
+    #     },\
+    #     "resource": {\
+    #         "@c": ".Actuator",\
+    #         "id": "",\
+    #         "name": "' + device_name + '",\
+    #         "description": null,\
+    #         "interworkingServiceURL": "http://localhost:3030/rap/ac_switch",\
+    #         "locatedAt": null,\
+    #         "services": null,\
+    #         "capabilities": [{\
+    #             "name": "OnOffCapabililty",\
+    #             "parameters": [{\
+    #                 "name": "switch",\
+    #                 "datatype": {\
+    #                     "@c": ".PrimitiveDatatype",\
+    #                     "baseDatatype": "xsd:unsignedByte",\
+    #                     "isArray": false\
+    #                 },\
+    #                 "mandatory": true,\
+    #                 "restrictions": [{\
+    #                     "@c": ".RangeRestriction",\
+    #                     "min": 0,\
+    #                     "max": 1\
+    #                 }]\
+    #             }],\
+    #             "effects": null\
+    #         }]\
+    #     }\
+    # }')
 
+    resource_1 = str('{\
+		  "internalIdResource": "' + mac_address + '",\
+		  "sspIdResource": "",\
+		  "sspIdParent": "' + ssp_id + '",\
+		  "symIdParent": "' + sym_id + '",\
+		  "accessPolicy": {\
+			"policyType": "PUBLIC",\
+			"requiredClaims": {}\
+		  },\
+		  "filteringPolicy": {\
+			"policyType": "PUBLIC",\
+			"requiredClaims": {}\
+		  },\
+		  "resource": {\
+			"@c": ".Actuator",\
+			"id": "",\
+			"name": "' + device_name + '",\
+			"description": null,\
+			"interworkingServiceURL": "http://localhost:3030/rap/room_sensor",\
+			"locatedAt": null,\
+			"services": null,\
+			"capabilities": [\
+                {\
+                    "name": "OnOffCapabililty",\
+                    "parameters": [\
+                    ],\
+                    "effects": null\
+                }\
+			]\
+		  }\
+		}')
     register_resource(resource_1)
 
     kalive = create_keepalive_message(ssp_id)

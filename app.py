@@ -7,13 +7,17 @@ import re
 import requests
 import json
 import socket
+import threading
+import time
 
 PUBLIC_RESOURCES = 'https://symbioteweb.eu.ngrok.io/innkeeper/public_resources'
 AC_SWITCH_IP_ADDRESS = '192.168.1.102'
 AC_SWITCH_PORT = 3310
-AC_SWITCH_MAC_ADDRESS = 'fa:16:3e:c0:ba:42'
+AC_SWITCH_MAC_ADDRESS = '40:4c:f5:c0:de:7e'
 AC_SWITCH_NAME = 'AcSwitch'
 BUFFER_SIZE = 1024
+
+wifi_devices = []
 
 app = Flask(__name__)
 
@@ -37,8 +41,8 @@ def scan_devices():
 
 @app.route('/api/register_switch', methods=['POST'])
 def register_switch():
-    symbiote_manage.register_ac_switch(AC_SWITCH_MAC_ADDRESS, AC_SWITCH_NAME)
-    return jsonify('OK')
+    response = symbiote_manage.register_ac_switch(AC_SWITCH_MAC_ADDRESS, AC_SWITCH_NAME)
+    return jsonify(response)
 
 @app.route('/api/unregister/room_sensor/<ssp_id>', methods=['POST'])
 def unregister_room_sensor(ssp_id):
@@ -183,11 +187,16 @@ def read_resource_rap():
     return jsonify(final_readings)
 
 def scan_register():
-    devices = ble_manage.scan_room_sensor()
-    for dev in devices:
+    ble_devices = ble_manage.scan_room_sensor()
+    t = threading.Thread(target=listen_socket, name='listen_socket')
+    t.start()
+    s=socket(AF_INET, SOCK_DGRAM)
+    s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+    s.sendto('DISCOVER\r',('255.255.255.255',3310))
+    # for dev in devices:
         # Register devices
-        symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
-    return devices
+        # symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
+    return wifi_devices
 
 def control_switch(status):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -199,6 +208,15 @@ def control_switch(status):
     data = s.recv(BUFFER_SIZE)
     s.close()
     return data
+
+def listen_socket:
+    for i in range(5):
+        time.sleep(1)
+        s=socket(AF_INET, SOCK_DGRAM)
+        s.bind(('',3310))
+        m=s.recvfrom(1024)
+        wifi_devices.append(m[0])
+
 
 if __name__ == '__main__':
     # control_switch(1)
