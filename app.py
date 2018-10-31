@@ -190,8 +190,8 @@ def scan_register():
     ble_devices = ble_manage.scan_room_sensor()
     t = threading.Thread(target=listen_socket, name='listen_socket')
     t.start()
-    s=socket(AF_INET, SOCK_DGRAM)
-    s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+    s=socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     s.sendto('DISCOVER\r',('255.255.255.255',3310))
     # for dev in devices:
         # Register devices
