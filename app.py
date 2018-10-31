@@ -194,9 +194,11 @@ def scan_register():
     s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     s.sendto('DISCOVER\r',('255.255.255.255',3310))
     time.sleep(5)
+    print 'timeout check recived messages'
     # for dev in devices:
         # Register devices
         # symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
+    print wifi_devices
     return wifi_devices
 
 def control_switch(status):
@@ -216,6 +218,7 @@ def listen_socket():
         s=socket(AF_INET, SOCK_DGRAM)
         s.bind(('',3310))
         m=s.recvfrom(1024)
+        print m[0]
         wifi_devices.append(m[0])
 
 
