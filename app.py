@@ -77,6 +77,7 @@ def read_resource(sensor_id):
 
     return jsonify(final_response)
 
+
 @app.route('/rap/ac_switch', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def ac_resource_rap():
     print 'Control AC Switch'
@@ -84,17 +85,19 @@ def ac_resource_rap():
     request_data = json.loads(request.get_data())
     resourceInfo = request_data['resourceInfo']
     ip_address = resourceInfo[0]['internalIdResource']
-    body = request_data['body']
-    OnOffCapabililty = body['OnOffCapabililty']
-    control = OnOffCapabililty['control']
+    control = request_data['body']['OnOffCapabililty']['control']
+    status = request_data['body']['OnOffCapabililty']['on']
     if (control):
-        status = control['on']
+        print 'Need Control'
         if status:
+            print 'Turn ON'
             control_switch(1, ip_address)
         else:
+            print 'Turn OFF'
             control_switch(0, ip_address)
     current_status = get_control_switch(ip_address)
     return jsonify(current_status)
+
 
 @app.route('/rap/room_sensor', methods=['POST'])
 def read_resource_rap():
@@ -204,43 +207,49 @@ def read_resource_rap():
 
 
 def scan_register():
-    ble_devices = ble_manage.scan_room_sensor()
-    s = socket(AF_INET, SOCK_DGRAM)
-    s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-    s.sendto('DISCOVER\r', ('255.255.255.255', 3310))
-    # time.sleep(5)
-
-    s1 = socket(AF_INET, SOCK_DGRAM)
-    s1.bind(('', 3310))
-    s1.settimeout(5.0)  # 5 seconds
-    m = s1.recvfrom(1024)
-    wifi_devices_string = m[0]
-    mylist = wifi_devices_string.split(',')
-
-    ac_switch_mac_address = mylist[1]
-    final_ac_switch_mac_address = ac_switch_mac_address[:2] + ':' + ac_switch_mac_address[2:4] + ':' + ac_switch_mac_address[4:6] + \
-        ':' + ac_switch_mac_address[6:8] + ':' + \
-        ac_switch_mac_address[8:10] + ':' + ac_switch_mac_address[10:12]
-
-    current_device = {}
-    current_device['mac_address'] = final_ac_switch_mac_address
-    current_device['name'] = 'AC_SWITCH'
-    current_device['type'] = 'ac_switch'
-    current_device['ip_address'] = mylist[2]
-
-    json_data = json.dumps(current_device)
     devices = []
-    devices.append(current_device)
+    ble_devices = ble_manage.scan_room_sensor()
     devices.append(ble_devices)
+    for dev in ble_devices:
+        # Register devices
+        symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
+    try:
+        s = socket(AF_INET, SOCK_DGRAM)
+        s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        s.sendto('DISCOVER\r', ('255.255.255.255', 3310))
+        # time.sleep(5)
 
-    s.close()
-    s1.close()
-    for dev in devices:
-    # Register devices
-        if (dev['type'] == 'room_sensor'):
-            symbiote_manage.register_room_sensor(dev['mac_address'], dev['name'])
-        else:
-            symbiote_manage.register_ac_switch(dev['mac_address'], dev['ip_address'], dev['name'])
+        s1 = socket(AF_INET, SOCK_DGRAM)
+        s1.bind(('', 3310))
+        s1.settimeout(5.0)  # 5 seconds
+        m = s1.recvfrom(1024)
+        wifi_devices_string = m[0]
+        mylist = wifi_devices_string.split(',')
+
+        ac_switch_mac_address = mylist[1]
+        final_ac_switch_mac_address = ac_switch_mac_address[:2] + ':' + ac_switch_mac_address[2:4] + ':' + ac_switch_mac_address[4:6] + \
+            ':' + ac_switch_mac_address[6:8] + ':' + \
+            ac_switch_mac_address[8:10] + ':' + ac_switch_mac_address[10:12]
+
+        current_device = {}
+        current_device['mac_address'] = final_ac_switch_mac_address
+        current_device['name'] = 'AC_SWITCH'
+        current_device['type'] = 'ac_switch'
+        current_device['ip_address'] = mylist[2]
+
+        json_data = json.dumps(current_device)
+
+        devices.append(current_device)
+
+        s.close()
+        s1.close()
+
+        symbiote_manage.register_ac_switch(
+            current_device['mac_address'], current_device['ip_address'], current_device['name'])
+    except:
+        print 'Error reading ac switch'
+
+    print devices
     return devices
 
 
@@ -253,9 +262,11 @@ def control_switch(status, ip_address):
         s.send('SET,1:ONOFF,ON\r')
     s.settimeout(5.0)  # 5 seconds
     data = s.recv(BUFFER_SIZE)
+    print data
     s.settimeout(None)
     s.close()
     return data
+
 
 def get_control_switch(ip_address):
     s = socket(AF_INET, SOCK_STREAM)
@@ -266,11 +277,14 @@ def get_control_switch(ip_address):
     s.settimeout(None)
     s.close()
     state = 'OFF'
+    print data
+    print data[13]
     if data[13] == "F":
         state = 'OFF'
     else:
         state = 'ON'
     return state
+
 
 if __name__ == '__main__':
     scan_register()
