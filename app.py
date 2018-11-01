@@ -287,5 +287,8 @@ def get_control_switch(ip_address):
 
 
 if __name__ == '__main__':
+    test_response = requests.get(PUBLIC_RESOURCES)
+    if test_response.status_code != 200:
+        raise Exception('Service not still running') # Don't! If you catch, likely to hide bugs.
     scan_register()
     app.run(debug=True, host='0.0.0.0', port=3030)
