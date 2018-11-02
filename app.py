@@ -95,7 +95,11 @@ def ac_resource_rap():
         else:
             print 'Turn OFF'
             control_switch(0, ip_address)
-    current_status = get_control_switch(ip_address)
+    current_status_string = get_control_switch(ip_address)
+    current_status = {}
+    current_status['status'] = current_status_string
+    json_data = json.dumps(current_status)
+
     return jsonify(current_status)
 
 
@@ -124,7 +128,7 @@ def read_resource_rap():
                 break
     # Connect to the required mac address and get readings
     final_readings = {}
-    print mac_address
+    # print mac_address
     if (mac_address != ''):
         final_readings = ble_manage.read_room_sensor(mac_address)
 

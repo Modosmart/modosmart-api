@@ -24,7 +24,10 @@ def scan_room_sensor():
 
 
 def read_room_sensor(mac_address):
-    p = Peripheral(mac_address)
+    print 'Called room sensor'
+    print mac_address
+    p = Peripheral(mac_address, 'random')
+    print 'Created Peripheral'
     sensor_service_uuid = UUID('0000a000-0000-1000-8000-00805f9b34fb')
     battery_service_uuid = UUID(6159)
     device_info_service_uuid = UUID(6154)
