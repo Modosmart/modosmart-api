@@ -463,7 +463,7 @@ Response from Agent:
  The response is the same of the GET, but it is actually an array of Json like the GET response.
 
 
-### RAP SUBSCRIBE
+##### RAP SUBSCRIBE
 
 Request from RAP:
 
