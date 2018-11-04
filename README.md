@@ -12,4 +12,4 @@ symbIoTe is an Open Source middleware which allows IoT solutions providers to ex
 For more info about Symbiote visit [Symbiote](https://www.symbiote-h2020.eu/).
 
 ### Architecture
-![Architecture](https://raw.githubusercontent.com/mohamed-elsabagh/modosmart-api/master/resources/architecture.png)
+![Architecture](https://raw.githubusercontent.com/Modosmart/modosmart-api/master/resources/diagram.png)
