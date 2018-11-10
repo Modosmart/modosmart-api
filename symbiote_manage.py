@@ -178,7 +178,7 @@ def register_room_sensor(mac_address, name):
 			"@c": ".StationarySensor",\
 			"id": "",\
 			"name": "' + device_name + '",\
-			"description": null,\
+			"description": ["Room_Sensor"],\
 			"interworkingServiceURL": "http://localhost:3030/rap/room_sensor",\
 			"locatedAt": null,\
 			"services": null,\
@@ -186,7 +186,8 @@ def register_room_sensor(mac_address, name):
 			  "temperature",\
 			  "humidity",\
               "activity",\
-              "batteryLevel"\
+              "batteryLevel",\
+              "action"\
 			]\
 		  }\
 		}')
@@ -242,7 +243,7 @@ def register_ac_switch(mac_address, ip_address, name):
 			"@c": ".Actuator",\
 			"id": "",\
 			"name": "' + device_name + '",\
-			"description": null,\
+			"description": ["AC_Switch"],\
 			"interworkingServiceURL": "http://localhost:3030/rap/ac_switch",\
 			"locatedAt": null,\
 			"services": null,\

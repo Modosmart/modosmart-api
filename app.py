@@ -132,82 +132,96 @@ def read_resource_rap():
     if (mac_address != ''):
         final_readings = ble_manage.read_room_sensor(mac_address)
 
-    # temperature = final_readings['temperature']
-    # humidity = final_readings['humidity']
-    # battery = final_readings['battery']
-    # presence = final_readings['presence']
-    # fw_version = final_readings['firmware']
+    temperature = final_readings['temperature']
+    humidity = final_readings['humidity']
+    battery = final_readings['battery']
+    presence = final_readings['presence']
+    fw_version = final_readings['firmware']
 
-    # print str(presence)
-    # final_response = str('{\
-    #         "resourceId": "' + mac_address + '",\
-    #         "location": {\
-    #             "longitude": -2.944728,\
-    #             "latitude": 43.26701,\
-    #             "altitude": 20\
-    #         },\
-    #         "resultTime": "1970-1-1T02:00:12",\
-    #         "samplingTime": "1970-1-1T02:00:12",\
-    #         "obsValues": [\
-    #             {\
-    #                 "value": "' + str(temperature) + '",\
-    #                 "obsProperty": {\
-    #                     "@c": ".Property",\
-    #                     "name": "temperature",\
-    #                     "description": ""\
-    #                 },\
-    #                 "uom": {\
-    #                     "@c": "UnitOfMeasurment",\
-    #                     "symbol": "C",\
-    #                     "name": "C",\
-    #                     "description": ""\
-    #                 }\
-    #             },\
-    #             {\
-    #                 "value": "' + str(humidity) + '",\
-    #                 "obsProperty": {\
-    #                     "@c": ".Property",\
-    #                     "name": "humidity",\
-    #                     "description": ""\
-    #                 },\
-    #                 "uom": {\
-    #                     "@c": "UnitOfMeasurment",\
-    #                     "symbol": "%",\
-    #                     "name": "%",\
-    #                     "description": ""\
-    #                 }\
-    #             },\
-    #             {\
-    #                 "value": "' + str(battery) + '",\
-    #                 "obsProperty": {\
-    #                     "@c": ".Property",\
-    #                     "name": "batteryLevel",\
-    #                     "description": ""\
-    #                 },\
-    #                 "uom": {\
-    #                     "@c": "UnitOfMeasurment",\
-    #                     "symbol": "%",\
-    #                     "name": "%",\
-    #                     "description": ""\
-    #                 }\
-    #             },\
-    #             {\
-    #                 "value": "' + str(presence) + '",\
-    #                 "obsProperty": {\
-    #                     "@c": ".Property",\
-    #                     "name": "activity",\
-    #                     "description": ""\
-    #                 },\
-    #                 "uom": {\
-    #                     "@c": "UnitOfMeasurment",\
-    #                     "symbol": "",\
-    #                     "name": "",\
-    #                     "description": ""\
-    #                 }\
-    #             }\
-    #         ]\
-    #     }').decode("utf8")
-    return jsonify(final_readings)
+    final_response = str('{\
+            "resourceId": "' + mac_address + '",\
+            "location": {\
+                "longitude": -2.944728,\
+                "latitude": 43.26701,\
+                "altitude": 20\
+            },\
+            "resultTime": "1970-1-1T02:00:12",\
+            "samplingTime": "1970-1-1T02:00:12",\
+            "obsValues": [\
+                {\
+                    "value": "' + str(temperature) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "temperature",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "C",\
+                        "name": "C",\
+                        "description": ""\
+                    }\
+                },\
+                {\
+                    "value": "' + str(humidity) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "humidity",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "%",\
+                        "name": "%",\
+                        "description": ""\
+                    }\
+                },\
+                {\
+                    "value": "' + str(battery) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "batteryLevel",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "%",\
+                        "name": "%",\
+                        "description": ""\
+                    }\
+                },\
+                {\
+                    "value": "' + str(presence) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "activity",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "",\
+                        "name": "",\
+                        "description": ""\
+                    }\
+                },\
+                {\
+                    "value": "' + str(fw_version) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "action",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "",\
+                        "name": "",\
+                        "description": ""\
+                    }\
+                }\
+            ]\
+        }')
+    json_response = json.loads(final_response)
+    return jsonify(json_response)
 
 
 def scan_register():
