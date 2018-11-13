@@ -15,13 +15,14 @@ BUFFER_SIZE = 1024
 
 app = Flask(__name__)
 
+
 # @app.route('/', defaults={'path': ''}, methods=['POST'])
 # @app.route('/<path:path>', methods=['POST'])
 # def catch_all(path):
 #     print 'Catch all'
 #     print 'You want path: %s' % path
 #     print request.get_data()
-#     return jsonify('el3ab yala')
+#     return jsonify('reponse ok')
 
 
 @app.route('/')
@@ -35,17 +36,29 @@ def scan_devices():
     return jsonify(devices)
 
 
-@app.route('/api/register_switch', methods=['POST'])
-def register_switch():
-    response = symbiote_manage.register_ac_switch(
-        '00:1D:C9:A1:89:00', '192.168.1.23', "AC_SWITCH")
-    return jsonify('OK')
+# @app.route('/api/register_switch', methods=['POST'])
+# def register_switch():
+#     response = symbiote_manage.register_ac_switch(
+#         '00:1D:C9:A1:89:00', '192.168.1.23', "AC_SWITCH")
+#     return jsonify('OK')
 
 
-@app.route('/api/unregister/room_sensor/<ssp_id>', methods=['POST'])
-def unregister_room_sensor(ssp_id):
-    addr = request.form['mac_address']
-    innk_resp = symbiote_manage.unregister_room_sensor(addr, ssp_id)
+@app.route('/api/unregister', methods=['POST'])
+def unregister_resource():
+    ssp_id = request.form['ssp_id']
+    innk_resp = symbiote_manage.unregister_room_sensor(ssp_id)
+    return Response(innk_resp.text, status=innk_resp.status_code)
+
+
+@app.route('/api/keep_alive', methods=['POST'])
+def resource_keep_alive():
+    print('Keep alive called')
+    # ssp_id = request.form['ssp_id']
+    req_data = json.loads(request.get_json())
+    ssp_id = req_data['ssp_id']
+    print(ssp_id)
+    innk_resp = symbiote_manage.send_keep_alive(ssp_id)
+    print(innk_resp.status_code)
     return Response(innk_resp.text, status=innk_resp.status_code)
 
 
@@ -68,6 +81,8 @@ def read_resource(sensor_id):
             if "SM006_" in resource_name:
                 # get mac address
                 mac_address = resource_name.replace('SM006_', '')
+                strings_slices = mac_address.split("_")
+                mac_address = strings_slices[0]
                 break
     # Connect to the required mac address and get readings
     final_response = {}
@@ -85,16 +100,28 @@ def ac_resource_rap():
     request_data = json.loads(request.get_data())
     resourceInfo = request_data['resourceInfo']
     ip_address = resourceInfo[0]['internalIdResource']
-    control = request_data['body']['OnOffCapabililty']['control']
-    status = request_data['body']['OnOffCapabililty']['on']
-    if (control):
+    parameters_array = request_data['body']['OnOffCapabililty']
+    if len(parameters_array) < 2:
+        return Response('number of parameters is not correct', status=404)
+    on_parameter_found = False
+    control_parameter_found = False
+    control = 0
+    on = 0
+    for i in range(len(parameters_array)):
+        current_parameter = parameters_array[i]
+        if 'on' in current_parameter:
+            on_parameter_found = True
+            on = current_parameter['on']
+        if 'control' in current_parameter:
+            control_parameter_found = True
+            control = current_parameter['control']
+
+    if (not on_parameter_found or not control_parameter_found):
+        return Response('couldnot find on or control', status=404)
+
+    if (control == 1):
         print 'Need Control'
-        if status:
-            print 'Turn ON'
-            control_switch(1, ip_address)
-        else:
-            print 'Turn OFF'
-            control_switch(0, ip_address)
+        control_switch(on, ip_address)
     current_status_string = get_control_switch(ip_address)
     current_status = {}
     current_status['status'] = current_status_string
@@ -125,6 +152,8 @@ def read_resource_rap():
             if "SM006_" in resource_name:
                 # get mac address
                 mac_address = resource_name.replace('SM006_', '')
+                strings_slices = mac_address.split("_")
+                mac_address = strings_slices[0]
                 break
     # Connect to the required mac address and get readings
     final_readings = {}
@@ -307,6 +336,7 @@ def get_control_switch(ip_address):
 if __name__ == '__main__':
     test_response = requests.get(PUBLIC_RESOURCES)
     if test_response.status_code != 200:
-        raise Exception('Service not still running') # Don't! If you catch, likely to hide bugs.
+        # Don't! If you catch, likely to hide bugs.
+        raise Exception('Service not still running')
     scan_register()
     app.run(debug=True, host='0.0.0.0', port=3030)

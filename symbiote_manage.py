@@ -21,7 +21,7 @@ URL_JOIN = 'http://' + SSP_URL + ':' + SSP_PORT + '/innkeeper/sdev/join'
 URL_UNREGISTER = 'http://' + SSP_URL + ':' + \
     SSP_PORT + '/innkeeper/sdev/unregister'
 URL_KEEPALIVE = 'http://' + SSP_URL + ':' + \
-    SSP_PORT + '/innkeeper/sdev/keepalive'
+    SSP_PORT + '/innkeeper/keep_alive'
 
 
 def create_LWSP_tunnel(mac_addr):
@@ -127,12 +127,21 @@ def register_resource(payload):
     print(decr_str)
 
 
-def unregister_room_sensor(mac_address, Id):
-    dk1_str = create_LWSP_tunnel(mac_address)
-    unregister = create_unregister_message(Id)
+def unregister_room_sensor(ssp_id):
+    unregister = create_unregister_message(ssp_id)
     encr_str = encrypt_payload(unregister)
     innk_resp = requests.post(URL_UNREGISTER, data=encr_str, headers={
                               'Content-Type': 'Application/json'})
+    return innk_resp
+
+
+def send_keep_alive(ssp_id):
+    kalive = create_keepalive_message(ssp_id)
+    encr_str = encrypt_payload(kalive)
+    print("Sending keep alive")
+    innk_resp = requests.post(URL_KEEPALIVE, data=encr_str, headers={
+        'Content-Type': 'Application/json'})
+
     return innk_resp
 
 
@@ -177,7 +186,7 @@ def register_room_sensor(mac_address, name):
 		  "resource": {\
 			"@c": ".StationarySensor",\
 			"id": "",\
-			"name": "' + device_name + '",\
+			"name": "' + device_name + '_' + ssp_id + '",\
 			"description": ["Room_Sensor"],\
 			"interworkingServiceURL": "http://localhost:3030/rap/room_sensor",\
 			"locatedAt": null,\
@@ -242,7 +251,7 @@ def register_ac_switch(mac_address, ip_address, name):
 		  "resource": {\
 			"@c": ".Actuator",\
 			"id": "",\
-			"name": "' + device_name + '",\
+			"name": "' + device_name + '_' + ssp_id + '",\
 			"description": ["AC_Switch"],\
 			"interworkingServiceURL": "http://localhost:3030/rap/ac_switch",\
 			"locatedAt": null,\
@@ -251,12 +260,45 @@ def register_ac_switch(mac_address, ip_address, name):
                 {\
                     "name": "OnOffCapabililty",\
                     "parameters": [\
+                        {\
+                            "name":"on",\
+                            "mandatory":true,\
+                            "restrictions":[\
+                                {\
+                                    "@c":".RangeRestriction",\
+                                    "min":0,\
+                                    "max":1\
+                                }\
+                            ],\
+                            "datatype":{\
+                                "@c":".PrimitiveDatatype",\
+                                "isArray":false,\
+                                "baseDatatype":"xsd:unsignedByte"\
+                            }\
+                        },\
+                        {\
+                            "name":"control",\
+                            "mandatory":true,\
+                            "restrictions":[\
+                                {\
+                                    "@c":".RangeRestriction",\
+                                    "min":0,\
+                                    "max":1\
+                                }\
+                            ],\
+                            "datatype":{\
+                                "@c":".PrimitiveDatatype",\
+                                "isArray":false,\
+                                "baseDatatype":"xsd:unsignedByte"\
+                            }\
+                        }\
                     ],\
                     "effects": null\
                 }\
 			]\
 		  }\
 		}')
+
     register_resource(resource_1)
 
     kalive = create_keepalive_message(ssp_id)
