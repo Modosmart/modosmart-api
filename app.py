@@ -7,6 +7,7 @@ import re
 import requests
 import json
 from socket import *
+import db_readings
 # import time
 
 PUBLIC_RESOURCES = 'https://symbioteweb.eu.ngrok.io/innkeeper/public_resources'
@@ -136,122 +137,20 @@ def read_resource_rap():
     request_data = json.loads(request.get_data())
     resourceInfo = request_data['resourceInfo']
     symIdResource = resourceInfo[0]['symIdResource']
+    print(request_data)
 
-    response = requests.get(PUBLIC_RESOURCES)
+    type = request_data['type']
 
-    resources = json.loads(response.text)
-    mac_address = ''
-    for resource in resources:
-        resource_obj = resource['resource']
-        resource_id = resource_obj['id']
-        resource_name = resource_obj['name']
-        # if "SM006_" not in resource_name:
-        #     continue
-        if resource_id == symIdResource:
-            # this is the resource required to get readings for
-            if "SM006_" in resource_name:
-                # get mac address
-                mac_address = resource_name.replace('SM006_', '')
-                strings_slices = mac_address.split("_")
-                mac_address = strings_slices[0]
-                break
-    # Connect to the required mac address and get readings
-    final_readings = {}
-    # print mac_address
-    if (mac_address != ''):
-        final_readings = ble_manage.read_room_sensor(mac_address)
-
-    temperature = final_readings['temperature']
-    humidity = final_readings['humidity']
-    battery = final_readings['battery']
-    presence = final_readings['presence']
-    fw_version = final_readings['firmware']
-
-    final_response = str('{\
-            "resourceId": "' + mac_address + '",\
-            "location": {\
-                "longitude": -2.944728,\
-                "latitude": 43.26701,\
-                "altitude": 20\
-            },\
-            "resultTime": "1970-1-1T02:00:12",\
-            "samplingTime": "1970-1-1T02:00:12",\
-            "obsValues": [\
-                {\
-                    "value": "' + str(temperature) + '",\
-                    "obsProperty": {\
-                        "@c": ".Property",\
-                        "name": "temperature",\
-                        "description": ""\
-                    },\
-                    "uom": {\
-                        "@c": "UnitOfMeasurment",\
-                        "symbol": "C",\
-                        "name": "C",\
-                        "description": ""\
-                    }\
-                },\
-                {\
-                    "value": "' + str(humidity) + '",\
-                    "obsProperty": {\
-                        "@c": ".Property",\
-                        "name": "humidity",\
-                        "description": ""\
-                    },\
-                    "uom": {\
-                        "@c": "UnitOfMeasurment",\
-                        "symbol": "%",\
-                        "name": "%",\
-                        "description": ""\
-                    }\
-                },\
-                {\
-                    "value": "' + str(battery) + '",\
-                    "obsProperty": {\
-                        "@c": ".Property",\
-                        "name": "batteryLevel",\
-                        "description": ""\
-                    },\
-                    "uom": {\
-                        "@c": "UnitOfMeasurment",\
-                        "symbol": "%",\
-                        "name": "%",\
-                        "description": ""\
-                    }\
-                },\
-                {\
-                    "value": "' + str(presence) + '",\
-                    "obsProperty": {\
-                        "@c": ".Property",\
-                        "name": "activity",\
-                        "description": ""\
-                    },\
-                    "uom": {\
-                        "@c": "UnitOfMeasurment",\
-                        "symbol": "",\
-                        "name": "",\
-                        "description": ""\
-                    }\
-                },\
-                {\
-                    "value": "' + str(fw_version) + '",\
-                    "obsProperty": {\
-                        "@c": ".Property",\
-                        "name": "action",\
-                        "description": ""\
-                    },\
-                    "uom": {\
-                        "@c": "UnitOfMeasurment",\
-                        "symbol": "",\
-                        "name": "",\
-                        "description": ""\
-                    }\
-                }\
-            ]\
-        }')
-    json_response = json.loads(final_response)
-    return jsonify(json_response)
-
+    if (type == 'GET'):
+        json_response = symbiote_manage.get_reading_room_sensor(symIdResource)
+        final_response_array = []
+        final_response_array.append(json_response)
+        return jsonify(final_response_array)
+    elif (type == 'HISTORY'):
+        # read records from db
+        records_required = request_data['top']
+        readings = db_readings.read_db(records_required)
+        return jsonify(readings)
 
 def scan_register():
     devices = []

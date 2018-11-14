@@ -16,10 +16,10 @@ meld3==1.0.2
 pyasn1==0.1.9
 pycrypto==2.6.1
 pygobject==3.22.0
-pymongo==3.7.2
+pymongo==3.4.0
 pyxdg==0.25
 requests==2.20.0
-RPi.GPIO==0.6.4
+RPi.GPIO==0.6.3
 SecretStorage==2.3.1
 six==1.10.0
 supervisor==3.3.1

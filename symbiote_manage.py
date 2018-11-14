@@ -3,6 +3,8 @@ import json
 from ctypes import c_char_p
 from time import sleep
 import requests
+import ble_manage
+import datetime
 
 LIBLWSP = 'dist/libLWSPLibrary.so'
 lib = ctypes.CDLL(LIBLWSP)
@@ -22,6 +24,7 @@ URL_UNREGISTER = 'http://' + SSP_URL + ':' + \
     SSP_PORT + '/innkeeper/sdev/unregister'
 URL_KEEPALIVE = 'http://' + SSP_URL + ':' + \
     SSP_PORT + '/innkeeper/keep_alive'
+PUBLIC_RESOURCES = 'https://symbioteweb.eu.ngrok.io/innkeeper/public_resources'
 
 
 def create_LWSP_tunnel(mac_addr):
@@ -306,3 +309,122 @@ def register_ac_switch(mac_address, ip_address, name):
     print("Start sending keepalive every " + str(timeout) + " seconds")
     innk_resp = requests.post(URL_KEEPALIVE, data=encr_str, headers={
         'Content-Type': 'Application/json'})
+
+
+def get_reading_room_sensor(symIdResource):
+    response = requests.get(PUBLIC_RESOURCES)
+
+    resources = json.loads(response.text)
+    mac_address = ''
+    for resource in resources:
+        resource_obj = resource['resource']
+        resource_id = resource_obj['id']
+        resource_name = resource_obj['name']
+        # if "SM006_" not in resource_name:
+        #     continue
+        if resource_id == symIdResource:
+            # this is the resource required to get readings for
+            if "SM006_" in resource_name:
+                # get mac address
+                mac_address = resource_name.replace('SM006_', '')
+                strings_slices = mac_address.split("_")
+                mac_address = strings_slices[0]
+                break
+    # Connect to the required mac address and get readings
+    final_readings = {}
+    # print mac_address
+    if (mac_address != ''):
+        final_readings = ble_manage.read_room_sensor(mac_address)
+
+    temperature = final_readings['temperature']
+    humidity = final_readings['humidity']
+    battery = final_readings['battery']
+    presence = final_readings['presence']
+    fw_version = final_readings['firmware']
+
+    date_string_now = datetime.datetime.now().isoformat()
+
+    final_response = str('{\
+            "resourceId": "' + mac_address + '",\
+            "location": {\
+                "longitude": -2.944728,\
+                "latitude": 43.26701,\
+                "altitude": 20\
+            },\
+            "resultTime": "' + date_string_now + '",\
+            "samplingTime": "' + date_string_now + '",\
+            "obsValues": [\
+                {\
+                    "value": "' + str(temperature) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "temperature",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "C",\
+                        "name": "C",\
+                        "description": ""\
+                    }\
+                },\
+                {\
+                    "value": "' + str(humidity) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "humidity",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "%",\
+                        "name": "%",\
+                        "description": ""\
+                    }\
+                },\
+                {\
+                    "value": "' + str(battery) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "batteryLevel",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "%",\
+                        "name": "%",\
+                        "description": ""\
+                    }\
+                },\
+                {\
+                    "value": "' + str(presence) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "activity",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "",\
+                        "name": "",\
+                        "description": ""\
+                    }\
+                },\
+                {\
+                    "value": "' + str(fw_version) + '",\
+                    "obsProperty": {\
+                        "@c": ".Property",\
+                        "name": "action",\
+                        "description": ""\
+                    },\
+                    "uom": {\
+                        "@c": "UnitOfMeasurment",\
+                        "symbol": "",\
+                        "name": "",\
+                        "description": ""\
+                    }\
+                }\
+            ]\
+        }')
+    json_response = json.loads(final_response)
+    return json_response
